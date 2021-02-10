@@ -164,6 +164,7 @@ Issue Date: 20/12/2007
 /*  2. Intel AES AND VIA ACE SUPPORT */
 
 #if defined( __GNUC__ ) && defined( __i386__ ) && !defined(__BEOS__)  \
+ && !defined(__ANDROID__) \
  || defined( _WIN32 ) && defined( _M_IX86 ) && !(defined( _WIN64 ) \
  || defined( _WIN32_WCE ) || defined( _MSC_VER ) && ( _MSC_VER <= 800 ))
 #  define VIA_ACE_POSSIBLE
@@ -172,11 +173,21 @@ Issue Date: 20/12/2007
 /* AESNI is supported by all Windows x64 compilers, but for Linux/GCC
    we have to test for SSE 2, SSE 3, and AES to before enabling it; */
 #if !defined( INTEL_AES_POSSIBLE )
-#  if defined( _WIN64 ) && defined( _MSC_VER ) \
+#  if defined( _WIN64 ) && defined( _M_X64 ) && defined( _MSC_VER ) \
    || defined( __GNUC__ ) && defined( __x86_64__ ) && \
 	  defined( __SSE2__ ) && defined( __SSE3__ ) && \
 	  defined( __AES__ )
 #    define INTEL_AES_POSSIBLE
+#  endif
+#endif
+
+/* The ARMv8 cryptography extension is supported by Windows ARM64 compilers. For
+   GCC (or clang), we have to test for FEATURE_CRYPTO before enabling it. */
+#if !defined( ARM64_CRYPTO_POSSIBLE )
+#  if defined( _WIN64 ) && defined( _M_ARM64 ) && defined( _MSC_VER ) \
+   || defined( __GNUC__ ) && defined( __aarch64__ ) && \
+    defined( __ARM_FEATURE_CRYPTO )
+#    define ARM64_CRYPTO_POSSIBLE
 #  endif
 #endif
 
@@ -226,6 +237,19 @@ Issue Date: 20/12/2007
 #if 0 && defined( VIA_ACE_POSSIBLE ) && !defined( ASSUME_VIA_ACE_PRESENT )
 #  define ASSUME_VIA_ACE_PRESENT
 #  endif
+
+/*  Define this option if support for the ARMv8 cryptography extension is
+    required. If USE_ARM64_CRYPTO_IF_PRESENT is defined then the extension
+    will be used if it is detected (both present and enabled).
+ */
+
+#if defined( ARM64_CRYPTO_POSSIBLE )
+#  if !defined( USE_ARM64_CRYPTO_IF_PRESENT )
+#    define USE_ARM64_CRYPTO_IF_PRESENT
+#  endif
+#elif defined( USE_ARM64_CRYPTO_IF_PRESENT )
+#  error: ARMv8 cryptography extension is not available on this platform
+#endif
 
 /*  3. ASSEMBLER SUPPORT
 
